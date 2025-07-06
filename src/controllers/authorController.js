@@ -1,57 +1,63 @@
-import { author } from "../models/Author.js";
+import {author} from "../models/Author.js";
+import notFound from "../error/notFound.js";
+import NotFoundError from "../error/notFound.js";
 
 class AuthorController {
-  // Método para buscar todos os livros
-  static async listAuthor(req, res) {
-    try {
-      const listAuthors = await author.find();
-      res.status(200).json(listAuthors);
-    } catch (error) {
-      res.status(500).json({ message: "Error retrieving authors", error });
+    // Metodo para buscar todos os livros
+    static async listAuthor(req, res, next) {
+        try {
+            const listAuthors = await author.find();
+            res.status(200).json(listAuthors);
+        } catch (err) {
+            next(err);
+        }
     }
-  }
 
-  static async findAuthorById(req, res) {
-    try {
-      const findAuthor = await author.findById(req.params.id);
-      res.status(200).json({ message: "Author found", author: findAuthor });
-    } catch (error) {
-      res.status(500).json({ message: "Author not found", error });
+    static async findAuthorById(req, res, next) {
+        try {
+            const findAuthor = await author.findById(req.params.id);
+            if (findAuthor !== null) {
+                res.status(200).json({message: "Author found", author: findAuthor});
+            } else {
+                next(new NotFoundError("Author not found"));
+            }
+        } catch (err) {
+            next(err);
+        }
     }
-  }
 
-  static async insertNewAuthor(req, res) {
-    try {
-      const newAuthor = await author.create(req.body);
-      res.status(201).json({ message: "New author add", author: newAuthor });
-    } catch (error) {
-      res.status(500).json({ message: "Error inserting new author", error });
+    static async insertNewAuthor(req, res, next) {
+        try {
+            const newAuthor = await author.create(req.body);
+            res.status(201).json({message: "New author add", author: newAuthor});
+        } catch (err) {
+            next(err);
+        }
     }
-  }
 
-  static async updateAuthor(req, res) {
-    try {
-      const id = req.params.id;
-      const modified = await author.findByIdAndUpdate(id, req.body, {
-        new: true,
-      });
-      res
-        .status(201)
-        .json({ message: "Succes book modified", author: modified });
-    } catch (error) {
-      res.status(500).json({ message: "Error book not modified", error });
+    static async updateAuthor(req, res, next) {
+        try {
+            const id = req.params.id;
+            const modified = await author.findByIdAndUpdate(id, req.body, {
+                new: true,
+            });
+            res
+                .status(201)
+                .json({message: "Success book modified", author: modified});
+        } catch (err) {
+            next(err);
+        }
     }
-  }
 
-  static async deleteAuthor(req, res) {
-    try {
-      const id = req.params.id;
-      await author.findByIdAndDelete(id);
-      res.status(200).json({ message: "Author removed" });
-    } catch (error) {
-      res.status(500).json({ message: "Error remove book", error });
+    static async deleteAuthor(req, res, next) {
+        try {
+            const id = req.params.id;
+            await author.findByIdAndDelete(id);
+            res.status(200).json({message: "Author removed"});
+        } catch (err) {
+            next(err);
+        }
     }
-  }
 }
 
 export default AuthorController;
