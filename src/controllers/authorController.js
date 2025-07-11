@@ -1,13 +1,13 @@
-import {author} from "../models/Author.js";
-import notFound from "../error/notFound.js";
+import {author} from "../models/index.js";
 import NotFoundError from "../error/notFound.js";
 
 class AuthorController {
-    // Metodo para buscar todos os livros
+    // Metodo para buscar todos os autores
     static async listAuthor(req, res, next) {
         try {
-            const listAuthors = await author.find();
-            res.status(200).json(listAuthors);
+            const listAuthors = author.find();
+            req.result = listAuthors;
+            next()
         } catch (err) {
             next(err);
         }

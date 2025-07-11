@@ -1,11 +1,12 @@
-import book from "../models/Book.js";
+import {author, book} from "../models/index.js";
 import NotFoundError from "../error/notFound.js";
 
 class BookController {
     static async listBooks(req, res, next) {
         try {
-            const listBooks = await book.find({}).populate("autor").exec();
-            res.status(200).json(listBooks);
+            const searchBooks = book.find();
+            req.result = searchBooks;
+            next()
         } catch (err) {
             next(err);
         }
@@ -24,11 +25,16 @@ class BookController {
         }
     }
 
-    static async listBooksByPublisher(req, res, next) {
-        const publisher = req.query.publisher;
+    static async listBooksByFilter(req, res, next) {
         try {
-            const booksByPublisher = await book.find({editora: publisher});
-            res.status(200).json(booksByPublisher);
+            const searchCriteria = await processSearchCriteria(req.query);
+            if (searchCriteria !== null) {
+                const booksByFilter = book.find(searchCriteria).populate("autor");
+                req.result = booksByFilter;
+                next()
+            } else {
+                res.status(200).send([]);
+            }
         } catch (err) {
             next(err);
         }
@@ -49,7 +55,7 @@ class BookController {
             const modified = await book.findByIdAndUpdate(id, req.body, {
                 new: true,
             });
-            res.status(201).json({message: "Succes book modified", book: modified});
+            res.status(201).json({message: "Success book modified", book: modified});
         } catch (err) {
             next(err);
         }
@@ -64,6 +70,28 @@ class BookController {
             next(err);
         }
     }
+}
+
+async function processSearchCriteria(params) {
+    const {title, publisher, minPages, maxPages, authorName} = params;
+
+    let searchCriteria = {};
+    if (title) searchCriteria.titulo = {$regex: title, $options: "i"}; // Case-insensitive search
+    if (publisher) searchCriteria.editora = {$regex: publisher, $options: "i"}; // Case-insensitive search
+
+    if (minPages || maxPages) searchCriteria.paginas = {}; // Initialize paginas object if min or max pages are provided
+    if (minPages) searchCriteria.paginas.$gte = minPages //Greater than or equal to minPages
+    if (maxPages) searchCriteria.paginas.$lte = maxPages; //Less than or equal to maxPages
+
+    if (authorName) {
+        const searchAuthor = await author.findOne({nome: authorName});
+        if (author !== null) {
+            searchCriteria.autor = searchAuthor._id
+        } else {
+            searchCriteria = null;
+        }
+    }
+    return searchCriteria
 }
 
 export default BookController;
